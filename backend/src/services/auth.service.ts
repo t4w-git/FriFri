@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { generateToken } from '../middleware/auth.middleware.js';
 import { UnauthorizedError, ValidationError, InternalServerError } from '../utils/errors.js';
 import { config } from '../config.js';
+import { logger } from '../logger.js';
 import { z } from 'zod';
 
 const LoginSchema = z.object({
@@ -16,8 +17,9 @@ export class AuthService {
    * This ensures the admin account always exists with the configured credentials
    */
   async initializeAdminAccount() {
+    const adminEmail = config.admin.email;
+
     try {
-      const adminEmail = config.admin.email;
       const adminPassword = config.admin.password;
 
       // Check if admin already exists
@@ -45,7 +47,14 @@ export class AuthService {
           }
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      logger.error({
+        err: error,
+        adminEmail,
+        code: error?.code,
+        meta: error?.meta,
+        clientVersion: error?.clientVersion
+      }, 'Failed to initialize admin account');
       throw new InternalServerError('Failed to initialize admin account');
     }
   }

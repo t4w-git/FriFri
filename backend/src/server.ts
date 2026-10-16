@@ -171,34 +171,37 @@ app.listen(PORT, async () => {
   logger.info(`🚀 Server running on port ${PORT} in ${config.env} mode`);
   
   // Test SMTP connection on startup
-  if (config.email.service === 'nodemailer' && config.email.nodemailer) {
+  const smtp = config.email.nodemailer;
+  if (config.email.service === 'nodemailer' && smtp?.user && smtp.password) {
     try {
       logger.info('🔧 Testing SMTP connection...');
       const testResult = await (emailService as any).transporter?.verify?.();
       if (testResult) {
         logger.info('✅ SMTP connection verified successfully', {
-          host: config.email.nodemailer.host,
-          port: config.email.nodemailer.port,
-          user: config.email.nodemailer.user
+          host: smtp.host,
+          port: smtp.port,
+          user: smtp.user
         });
       } else {
         logger.warn('⚠️ SMTP transporter.verify() returned false');
       }
     } catch (error: any) {
       logger.error('❌ SMTP connection failed on startup', {
-        host: config.email.nodemailer.host,
-        port: config.email.nodemailer.port,
+        host: smtp.host,
+        port: smtp.port,
         error: error?.message,
         code: error?.code
       });
     }
+  } else if (config.email.service === 'nodemailer') {
+    logger.warn('⚠️ SMTP check skipped: EMAIL_USER or EMAIL_PASSWORD is not configured');
   }
   
   // Initialize admin account from .env on startup
   try {
     await authService.initializeAdminAccount();
-  } catch (error) {
-    logger.error('Failed to initialize admin account:', error);
+  } catch (error: any) {
+    logger.error({ err: error }, 'Failed to initialize admin account');
     process.exit(1);
   }
 });
