@@ -3,7 +3,7 @@ FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
 
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY frontend/ ./
 RUN mkdir -p /app/backend
@@ -19,7 +19,7 @@ RUN apt-get update -y \
 
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY backend/ ./
 COPY --from=frontend-build /app/backend/public ./public
@@ -38,7 +38,7 @@ RUN apt-get update -y \
 
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps
 
 COPY --from=backend-build /app/backend/node_modules/.prisma ./node_modules/.prisma
 COPY --from=backend-build /app/backend/dist ./dist
