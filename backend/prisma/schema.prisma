@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Poem {
+  id            String   @id @default(cuid())
+  title         String   @db.VarChar(255)
+  text          String   @db.Text
+  author        String?  @db.VarChar(255)
+  audioUrl      String?  @db.VarChar(500)
+  thumbnailUrl  String?  @db.VarChar(500)
+  publishedDate DateTime?
+  excerpt       String?  @db.Text
+  active        Boolean  @default(true)
+  featured      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Quartine for GiocoPoesie (3-part poem structure)
+  partA         String?  @db.Text
+  partB         String?  @db.Text
+  partC         String?  @db.Text
+
+  @@index([active])
+  @@index([featured])
+  @@index([publishedDate])
+}
+
+model Sponsor {
+  id                String   @id @default(cuid())
+  name              String   @db.VarChar(255)
+  logoUrl           String?  @db.VarChar(500)
+  description       String?  @db.Text
+  link              String?  @db.VarChar(500)
+  contactEmail      String?  @db.VarChar(255)
+  tier              String   @db.VarChar(50) // "base", "premium", "gold"
+  prizeDescription  String?  @db.Text
+  gameType          String   @db.VarChar(50) // "fortuna_italiana", "fortuna_montelupo", "gioco_poesie", "tutti"
+  active            Boolean  @default(true)
+  views             Int      @default(0)
+  plays             Int      @default(0)
+  redemptions       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  prizeCodes  PrizeCode[]
+  gameSessions GameSession[]
+
+  @@index([active])
+  @@index([gameType])
+  @@index([tier])
+}
+
+model PrizeCode {
+  id                String   @id @default(cuid())
+  code              String   @unique @db.VarChar(50)
+  sponsorId         String
+  sponsor           Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  sponsorName       String   @db.VarChar(255)
+  gameType          String?  @db.VarChar(50)
+  playerEmail       String?  @db.VarChar(255)
+  prizeDescription  String?  @db.Text
+  claimedByPlayer   Boolean  @default(false)
+  claimedByPlayerAt DateTime?
+  redeemed          Boolean  @default(false)
+  redeemedDate      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([code])
+  @@index([sponsorId])
+  @@index([redeemed])
+  @@index([claimedByPlayer])
+  @@index([playerEmail])
+}
+
+model GameQuestion {
+  id                    String   @id @default(cuid())
+  gameType              String   @db.VarChar(50) // "gioco_poesie", "fortuna_italiana", "fortuna_montelupo"
+  questionNumber        Int      // 0, 1, 2
+  questionText          String   @db.Text
+  options               Json     // Array of strings: ["option1", "option2", "option3", ...]
+  correctAnswerIndex    Int      // Index of correct answer in options array
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([gameType, questionNumber])
+  @@index([gameType])
+}
+
+model GameSession {
+  id          String   @id @default(cuid())
+  gameType    String   @db.VarChar(50) // "gioco_poesie", "fortuna_italiana", "fortuna_montelupo"
+  playerEmail String   @db.VarChar(255)
+  browserFingerprint String? @db.VarChar(255) // Browser fingerprint for anti-cheating device-hopping detection
+  result      String   @db.VarChar(50) // "win", "lose", "pending"
+  prizeCode   String?  @db.VarChar(50)
+  sponsorId   String?
+  sponsor     Sponsor? @relation(fields: [sponsorId], references: [id])
+  winningAnswer Int?   // For fortune games: 0-2 for vase choice (GiocoPoesie, FortunaItaliana)
+  winningAnswerText String? @db.Text // For fortuna_montelupo ONLY: poem part text
+  correctAnswers Int @default(0) // Number of correct answers in quiz games (tracked by backend)
+  playedDate  DateTime @default(now())
+  quizData    Json?    // Stored quiz questions with answers (backend only, never sent to frontend)
+  quizStartTime DateTime? // Timestamp when quiz started - for timeout validation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gameType])
+  @@index([playerEmail])
+  @@index([browserFingerprint])
+  @@index([result])
+  @@index([playedDate])
+  @@index([sponsorId])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(255)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([active])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  date        DateTime?
+  location    String?  @db.VarChar(255)
+  bgColor     String   @default("#2D1B69") @db.VarChar(50)
+  textColor   String   @default("#FFFFFF") @db.VarChar(50)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([order])
+}
+
+model GameConfig {
+  id                    String   @id @default(cuid())
+  gameType              String   @db.VarChar(50) // "gioco_poesie", "fortuna_italiana", "fortuna_montelupo"
+  attemptsPerDay        Int      @default(5)
+  cooldownMinutes       Int      @default(5)
+  dailyResetHour        Int      @default(0) // UTC hour when daily limit resets
+  description           String?  @db.Text
+  active                Boolean  @default(true)
+  
+  // Win rate configuration: "1 win every X attempts"
+  winEveryXAttempts     Int      @default(3) // 1 win ogni 3 partite (per fortuna_italiana, fortuna_montelupo)
+  
+  // GiocoPoesie specific config
+  questionsPerGame      Int      @default(1) // Numero di domande per partita
+  questionsToWin        Int      @default(1) // Numero di risposte corrette per vincere
+  questionsTimeoutSeconds Int    @default(30) // Tempo per rispondere a ogni domanda (secondi)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([gameType])
+  @@index([active])
+}
+
+model SponsorTier {
+  id          String   @id @default(cuid())
+  key         String   @unique @db.VarChar(50) // "base", "premium", "gold"
+  label       String   @db.VarChar(100)
+  price       Int      // Prezzo annuale in euro
+  color       String   @db.VarChar(100) // Colore tailwind per card border
+  badge       String   @db.VarChar(100) // Colore tailwind per badge
+  popular     Boolean  @default(false)
+  features    Json     // Array di features string
+  description String?  @db.Text
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      String   @default("admin") @db.VarChar(50)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([active])
+}
