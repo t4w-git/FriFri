@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development node --import tsx src/server.ts",
-    "build": "npm install && npm --prefix ../frontend install && npm --prefix ../frontend run build && ./node_modules/.bin/tsc && cp -r src/templates dist/",
+    "build": "tsc && node scripts/copy-templates.mjs",
+    "build:full": "npm install && npm --prefix ../frontend install && npm --prefix ../frontend run build && npm run build",
     "start": "NODE_ENV=production node dist/server.js",
     "postinstall": "prisma generate",
     "test": "vitest",

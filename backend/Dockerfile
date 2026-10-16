@@ -5,11 +5,13 @@ WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --omit=dev
+COPY prisma ./prisma
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
 RUN npm run build
+RUN npm prune --omit=dev
 
 EXPOSE 3000
 

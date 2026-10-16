@@ -9,6 +9,33 @@ export function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+async function parseResponse(res) {
+  const text = await res.text();
+
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch (parseError) {
+    console.error('Failed to parse JSON response:', text);
+    const message = res.ok
+      ? 'Invalid JSON response from server'
+      : `Server returned ${res.status}${res.statusText ? ` ${res.statusText}` : ''}`;
+    const error = /** @type {any} */ (new Error(message));
+    Object.assign(error, { status: res.status, rawText: text, parseError });
+    throw error;
+  }
+}
+
+function throwForResponseError(res, data) {
+  if (res.ok) return;
+
+  const message = (data && data.error && data.error.message) || (data && data.message) || res.statusText;
+  const error = /** @type {any} */ (new Error(message));
+  Object.assign(error, { status: res.status, data });
+  throw error;
+}
+
 export async function apiFetch(path, options = {}) {
   const url = `${backendUrl}${path}`;
   const headers = {
@@ -21,26 +48,8 @@ export async function apiFetch(path, options = {}) {
     headers,
   });
 
-  const text = await res.text();
-  let data = null;
-  
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (parseError) {
-    console.error('Failed to parse JSON response:', text);
-    // If parsing fails, treat it as error regardless of status
-    const error = /** @type {any} */ (new Error('Invalid JSON response from server'));
-    Object.assign(error, { status: res.status, rawText: text, parseError });
-    throw error;
-  }
-
-  if (!res.ok) {
-    const message = (data && data.error && data.error.message) || (data && data.message) || res.statusText;
-    const error = /** @type {any} */ (new Error(message));
-    Object.assign(error, { status: res.status, data });
-    throw error;
-  }
-
+  const data = await parseResponse(res);
+  throwForResponseError(res, data);
   return data;
 }
 
@@ -55,26 +64,8 @@ export async function apiGet(path, query) {
   const res = await fetch(url.toString(), {
     headers: getAuthHeaders(),
   });
-  const text = await res.text();
-  let data = null;
-  
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (parseError) {
-    console.error('Failed to parse JSON response:', text);
-    // If parsing fails, treat it as error regardless of status
-    const error = /** @type {any} */ (new Error('Invalid JSON response from server'));
-    Object.assign(error, { status: res.status, rawText: text, parseError });
-    throw error;
-  }
-
-  if (!res.ok) {
-    const message = (data && data.error && data.error.message) || (data && data.message) || res.statusText;
-    const error = /** @type {any} */ (new Error(message));
-    Object.assign(error, { status: res.status, data });
-    throw error;
-  }
-
+  const data = await parseResponse(res);
+  throwForResponseError(res, data);
   return data;
 }
 
