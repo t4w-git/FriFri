@@ -479,7 +479,11 @@ export class GameSessionService {
       ]);
 
       return { data, total, limit: validated.limit, offset: validated.offset };
-    } catch (error) {
+    } catch (error: any) {
+      logger.error({
+        err: error,
+        operation: 'getGameSessions'
+      }, 'Failed to fetch game sessions');
       throw new InternalServerError('Failed to fetch game sessions');
     }
   }
