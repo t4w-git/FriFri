@@ -98,6 +98,22 @@ CORS_ORIGIN=http://localhost:5173
 SENTRY_DSN=https://your_sentry_key@sentry.io/your_project_id
 ```
 
+## Deploy with EasyPanel
+
+Use the repository root as the Docker build context and `/Dockerfile` as the Dockerfile path.
+
+- Container port: `3000`
+- Health check: `/health`
+- `NODE_ENV=production`
+- `PORT=3000`
+- `DATABASE_URL=<connection string for the EasyPanel MySQL/MariaDB service>`
+- `JWT_SECRET=<strong random secret>`
+- `ADMIN_EMAIL=<admin email>`
+- `ADMIN_PASSWORD=<admin password>`
+- `CORS_ORIGIN=https://<your-public-domain>`
+
+The frontend and API are served by the same container, so `VITE_BACKEND_URL` is not needed in production.
+
 ## API Documentation
 
 Swagger/OpenAPI documentation is available at:

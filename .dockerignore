@@ -1,0 +1,11 @@
+.git
+.github
+**/node_modules
+backend/dist
+backend/uploads
+frontend/dist
+.env
+.env.*
+*.local
+frifri_db_dump.sql
+frifri (2).zip
