@@ -54,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 # Keep an imported legacy MySQL dump compatible with the current Prisma schema.
 # db push is intentionally run without --accept-data-loss so destructive drift
 # stops the deployment instead of silently dropping production data.
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/server.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && node dist/server.js"]

@@ -16,6 +16,8 @@
     "lint:fix": "eslint src --ext .ts,.js --fix",
     "typecheck": "tsc --noEmit",
     "migrate": "node --import tsx src/db/migrate.ts",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:push": "prisma db push",
     "seed": "node --import tsx src/db/seed.ts",
     "seed:db": "node --import tsx src/db/seed.ts",
     "db:reset": "node --import tsx src/db/reset.ts"

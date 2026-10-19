@@ -169,11 +169,10 @@ npm run test:cov   # Run tests with coverage
 
 The project uses MariaDB with Prisma ORM. Migrations are handled automatically by Prisma.
 
-To manually run migrations:
+To manually run migrations from the repository root:
 ```bash
-cd backend
-npx prisma migrate dev --name <migration_name>
-npx prisma db push
+npm --prefix backend run db:migrate:dev -- --name <migration_name>
+npm --prefix backend run db:push
 ```
 
 ## Testing
