@@ -3,6 +3,7 @@ import { config } from './config.js';
 
 const pinoConfig = {
   level: config.logging.level,
+  redact: ['req.headers.authorization', 'req.headers.cookie'],
   transport:
     config.env === 'development'
       ? {

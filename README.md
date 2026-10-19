@@ -167,7 +167,7 @@ npm run test:cov   # Run tests with coverage
 
 ## Database
 
-The project uses MariaDB with Prisma ORM. Migrations are handled automatically by Prisma.
+The project uses MariaDB with Prisma ORM. Apply schema changes once before deploying; the app container does not push the schema at startup, so multiple replicas cannot race to change the same tables.
 
 To manually run migrations from the repository root:
 ```bash
