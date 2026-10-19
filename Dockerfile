@@ -38,7 +38,8 @@ RUN apt-get update -y \
 
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma
-RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps
+RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps \
+  && test -x ./node_modules/.bin/prisma
 
 COPY --from=backend-build /app/backend/node_modules/.prisma ./node_modules/.prisma
 COPY --from=backend-build /app/backend/dist ./dist
