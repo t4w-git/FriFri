@@ -1,5 +1,10 @@
 const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
 
+function buildApiUrl(path) {
+  const baseUrl = backendUrl || window.location.origin;
+  return new URL(path, `${baseUrl.replace(/\/+$/, '')}/`);
+}
+
 export function getBackendUrl() {
   return backendUrl;
 }
@@ -17,9 +22,17 @@ async function parseResponse(res) {
   try {
     return JSON.parse(text);
   } catch (parseError) {
-    console.error('Failed to parse JSON response:', text);
+    const contentType = res.headers.get('content-type') || 'content-type sconosciuto';
+    const responseUrl = new URL(res.url || window.location.href);
+    const endpoint = `${responseUrl.origin}${responseUrl.pathname}`;
+    console.error('Failed to parse JSON response:', {
+      url: endpoint,
+      status: res.status,
+      contentType,
+      response: text,
+    });
     const message = res.ok
-      ? 'Invalid JSON response from server'
+      ? `Il server ha restituito ${contentType} invece di JSON per ${responseUrl.pathname}. Verifica che la richiesta API raggiunga il backend.`
       : `Server returned ${res.status}${res.statusText ? ` ${res.statusText}` : ''}`;
     const error = /** @type {any} */ (new Error(message));
     Object.assign(error, { status: res.status, rawText: text, parseError });
@@ -37,7 +50,7 @@ function throwForResponseError(res, data) {
 }
 
 export async function apiFetch(path, options = {}) {
-  const url = `${backendUrl}${path}`;
+  const url = buildApiUrl(path);
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -54,8 +67,7 @@ export async function apiFetch(path, options = {}) {
 }
 
 export async function apiGet(path, query) {
-  const base = backendUrl || window.location.origin;
-  const url = new URL(`${base}${path}`);
+  const url = buildApiUrl(path);
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
