@@ -21,8 +21,10 @@ export class PoemService {
     try {
       const validated = CreatePoemSchema.parse(data);
       
-      // Auto-generate text from quartines if they exist and text is not provided
-      const text = validated.text || combineQuartinesIntoText(validated.partA, validated.partB, validated.partC);
+      // Use the supplied text, or build it from the three quartines.
+      const text = validated.text?.trim()
+        ? validated.text
+        : combineQuartinesIntoText(validated.partA, validated.partB, validated.partC);
       
       const poem = await prisma.poem.create({
         data: {
@@ -111,14 +113,23 @@ export class PoemService {
       const poem = await prisma.poem.findUnique({ where: { id } });
       if (!poem) throw new NotFoundError('Poem', id);
 
-      // Auto-generate text from quartines if they exist and text is not provided
-      const text = validated.text || combineQuartinesIntoText(validated.partA, validated.partB, validated.partC);
+      const hasQuartineChanges =
+        validated.partA !== undefined || validated.partB !== undefined || validated.partC !== undefined;
+      const text = validated.text?.trim()
+        ? validated.text
+        : hasQuartineChanges
+          ? combineQuartinesIntoText(
+              validated.partA ?? poem.partA ?? undefined,
+              validated.partB ?? poem.partB ?? undefined,
+              validated.partC ?? poem.partC ?? undefined
+            )
+          : undefined;
 
       const updated = await prisma.poem.update({
         where: { id },
         data: {
           ...validated,
-          text, // Use auto-generated or provided text
+          ...(text !== undefined ? { text } : {}),
           publishedDate: validated.publishedDate ? new Date(validated.publishedDate) : undefined
         }
       });

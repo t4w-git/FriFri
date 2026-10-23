@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-export const CreatePoemSchema = z.object({
+const PoemSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
-  text: z.string().min(1, 'Text is required'),
+  text: z.string().optional(),
   author: z.string().max(255).optional(),
   audioUrl: z.string().optional().or(z.literal('')),
   thumbnailUrl: z.string().optional().or(z.literal('')),
@@ -14,7 +14,16 @@ export const CreatePoemSchema = z.object({
   partC: z.string().optional().or(z.literal(''))
 });
 
-export const UpdatePoemSchema = CreatePoemSchema.partial();
+export const CreatePoemSchema = PoemSchema.refine(
+  ({ text, partA, partB, partC }) =>
+    Boolean(text?.trim()) || [partA, partB, partC].every(part => Boolean(part?.trim())),
+  {
+    path: ['text'],
+    message: 'Text or all three quartine are required'
+  }
+);
+
+export const UpdatePoemSchema = PoemSchema.partial();
 
 export const PoemFilterSchema = z.object({
   active: z.enum(['true', 'false']).optional(),
